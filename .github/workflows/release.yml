@@ -26,6 +26,7 @@ jobs:
 
       - name: Package
         run: |
+          mkdir -p release       
           cd release
           cpack
 
