@@ -26,9 +26,8 @@ jobs:
 
       - name: Package
         run: |
-          mkdir -p release       
-          cd release
-          cpack
+          cd build
+          cpack -G DEB
 
       - name: Test
         run: |  
