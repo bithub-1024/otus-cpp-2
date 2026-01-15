@@ -1,11 +1,10 @@
-name: C++ Build & Release
+name: C++ CI
 
 on:
   push:
     branches:
-      - main
-    tags:
-      - "v*"   # релиз создаётся только на теги вида v0.1.0
+      - main   # сборка на каждый пуш в main
+    # теги использовать не обязательно, делаем Release по run_number
 
 jobs:
   build:
@@ -43,30 +42,26 @@ jobs:
           echo "Actual hash:   $RESULT"
           test "$RESULT" = "24e7a7b2270daee89c64d3ca5fb3da1a"
 
-      # 7️⃣ Создаём Release только если это тег
+      # 7️⃣ Создаём Release
       - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
+          tag_name: dev-${{ github.run_number }}
+          release_name: Release dev-${{ github.run_number }}
           draft: false
           prerelease: false
 
       # 8️⃣ Загружаем .deb в Release
       - name: Upload Release Asset
-        if: startsWith(github.ref, 'refs/tags/')
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/ip-filter-0.1.0-Linux.deb
-          asset_name: ip-filter-0.1.0-Linux.deb
+          asset_path: ./build/ip-filter-0.1.0-Linux.deb
+          asset_name: ip-filter-dev-${{ github.run_number }}.deb
           asset_content_type: application/vnd.debian.binary-package
-
-
