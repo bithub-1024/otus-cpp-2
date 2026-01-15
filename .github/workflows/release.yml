@@ -27,7 +27,7 @@ jobs:
       - name: Build
         run: cmake --build build
 
-      # 5. Прогоняем md5 тест
+      # 5. Прогоняем md5 тест 
       - name: Test
         run: |
           echo "Expected hash: 24e7a7b2270daee89c64d3ca5fb3da1a"
