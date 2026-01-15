@@ -1,60 +1,33 @@
-name: C++ CI
+name: 'C++ CI'
 
 on:
   push:
     branches:
-      - main   # сборка на каждый пуш в main
-    # теги использовать не обязательно, делаем Release по run_number
+      - master
+      - feature/github_actions
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      # 1️⃣ Клонируем репозиторий
-      - uses: actions/checkout@v4
-
-      # 2️⃣ Устанавливаем зависимости
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y cmake g++
-
-      # 3️⃣ Конфигурируем CMake
-      - name: Configure
-        run: |
-          mkdir -p build
-          cmake -S . -B build -DRELEASE_VERSION="dev"
-
-      # 4️⃣ Собираем бинарник
-      - name: Build
-        run: cmake --build build
-
-      # 5️⃣ Создаём .deb
-      - name: Package .deb
-        run: |
-          cd build
-          cpack -G DEB
-
-      # 6️⃣ Проверяем md5
-      - name: Test md5
-        run: |
-          echo "Expected hash: 24e7a7b2270daee89c64d3ca5fb3da1a"
-          RESULT=$(cat ./ip_filter.tsv | ./build/ip_filter | md5sum | awk '{print $1}')
-          echo "Actual hash:   $RESULT"
-          test "$RESULT" = "24e7a7b2270daee89c64d3ca5fb3da1a"
-
-      # 7️⃣ Создаём Release
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - run: sudo apt-get update && sudo apt-get install libboost-test-dev -y
+      - run: cmake . -DPATCH_VERSION=${{ github.run_number }} -DWITH_BOOST_TEST=ON
+      - run: cmake --build .
+      - run: cmake --build . --target test
+      - run: cmake --build . --target package
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: dev-${{ github.run_number }}
-          release_name: Release dev-${{ github.run_number }}
+          tag_name: ${{ github.run_number }}
+          release_name: Release ${{ github.run_number }}
           draft: false
           prerelease: false
-
-      # 8️⃣ Загружаем .deb в Release
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
@@ -62,6 +35,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/ip-filter-0.1.0-Linux.deb
-          asset_name: ip-filter-dev-${{ github.run_number }}.deb
+          asset_path: ./ip_filter-0.0.${{ github.run_number }}-Linux.deb
+          asset_name: ip_filter-0.0.${{ github.run_number }}-Linux.deb
           asset_content_type: application/vnd.debian.binary-package
