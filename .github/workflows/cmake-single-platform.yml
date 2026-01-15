@@ -1,51 +1,72 @@
-name: C++ Release
+name: C++ Build & Release
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+    tags:
+      - "v*"   # релиз создаётся только на теги вида v0.1.0
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Клонируем репозиторий
+      # 1️⃣ Клонируем репозиторий
       - uses: actions/checkout@v4
 
-      # 2. Устанавливаем зависимости
+      # 2️⃣ Устанавливаем зависимости
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y cmake g++
 
-      # 3. Конфигурируем CMake
+      # 3️⃣ Конфигурируем CMake
       - name: Configure
         run: |
           mkdir -p build
           cmake -S . -B build -DRELEASE_VERSION="dev"
 
-      # 4. Собираем бинарник
+      # 4️⃣ Собираем бинарник
       - name: Build
         run: cmake --build build
 
-      # 5. Прогоняем md5 тест
-      - name: Test
+      # 5️⃣ Создаём .deb
+      - name: Package .deb
+        run: |
+          cd build
+          cpack -G DEB
+
+      # 6️⃣ Проверяем md5
+      - name: Test md5
         run: |
           echo "Expected hash: 24e7a7b2270daee89c64d3ca5fb3da1a"
           RESULT=$(cat ./ip_filter.tsv | ./build/ip_filter | md5sum | awk '{print $1}')
           echo "Actual hash:   $RESULT"
           test "$RESULT" = "24e7a7b2270daee89c64d3ca5fb3da1a"
 
-      # 6. Собираем .deb через CPack
-      - name: Package
-        run: |
-          cd build
-          cpack -G DEB
-
-      # 7. Загружаем .deb на GitHub Release
-      - name: Release .deb
-        uses: softprops/action-gh-release@v1
-        with:
-          files: build/*.deb
+      # 7️⃣ Создаём Release только если это тег
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        id: create_release
+        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+      # 8️⃣ Загружаем .deb в Release
+      - name: Upload Release Asset
+        if: startsWith(github.ref, 'refs/tags/')
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/ip-filter-0.1.0-Linux.deb
+          asset_name: ip-filter-0.1.0-Linux.deb
+          asset_content_type: application/vnd.debian.binary-package
 
 
