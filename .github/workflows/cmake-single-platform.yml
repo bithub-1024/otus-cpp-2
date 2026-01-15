@@ -2,8 +2,7 @@ name: C++ Release
 
 on:
   push:
-    tags:
-      - "v*"  # запуск только при пуше тегов вида v0.1, v1.0 и т.д.
+    branches: [ "main" ]
 
 jobs:
   release:
