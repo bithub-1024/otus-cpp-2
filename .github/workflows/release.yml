@@ -25,7 +25,9 @@ jobs:
 
     - name: Test
       run: |
-        cat ./ip_filter.tsv | ./build/ip_filter | md5sum
-        cat ./expected.txt | md5sum
+    echo "Expected hash: 24e7a7b2270daee89c64d3ca5fb3da1a"
+    RESULT=$(cat test/ip_filter.tsv | ./build/ip_filter | md5sum | awk '{print $1}')
+    echo "Actual hash:   $RESULT"
+    test "$RESULT" = "24e7a7b2270daee89c64d3ca5fb3da1a"
 
 
