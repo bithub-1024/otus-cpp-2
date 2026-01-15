@@ -20,7 +20,7 @@ jobs:
       - name: Configure
         run: |
           mkdir -p build
-          cmake -S . -B build
+          cmake -S . -B build -DRELEASE_VERSION="dev"
 
       # 4. Собираем бинарник
       - name: Build
