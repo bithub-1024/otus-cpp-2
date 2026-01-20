@@ -11,12 +11,11 @@ struct ip_t
     short ip[4];
 };
 
-inline std::string to_string(const ip_t& ip)
+std::ostream& operator<<(std::ostream& st,const ip_t& ip)
 {
-    return std::to_string(ip.ip[0]) + "." +
-           std::to_string(ip.ip[1]) + "." +
-           std::to_string(ip.ip[2]) + "." +
-           std::to_string(ip.ip[3]);
+    st<<static_cast<int>(ip.ip[0]) << "." << static_cast<int>(ip.ip[1]) << "." << static_cast<int>(ip.ip[2]) << "." << static_cast<int>(ip.ip[3]);
+
+    return st;
 }
 
 void load_pool_ip(std::vector<ip_t> &pool)
